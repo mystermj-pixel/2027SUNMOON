@@ -1,0 +1,193 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  background: #0b1220;
+  color: #e8ecf3;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+    "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+  overflow: hidden;
+  height: 100%;
+}
+
+.viewer {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background:
+    radial-gradient(60% 50% at 50% 30%, rgba(64,109,209,0.25), transparent 70%),
+    linear-gradient(180deg, #0b1220 0%, #060a13 100%);
+}
+
+.viewer__header {
+  flex-shrink: 0;
+  text-align: center;
+  padding: 14px 16px 8px;
+}
+.viewer__eyebrow {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #6f86b3;
+  margin-bottom: 4px;
+}
+.viewer__title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #f3f5f9;
+}
+
+/* ── 책 영역 — 남은 공간 전부 ── */
+.book-area {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ── 책 스테이지 ── */
+.book-stage {
+  position: absolute;
+  top: 0; left: 0;
+  will-change: transform;
+  filter:
+    drop-shadow(-6px 10px 24px rgba(0,0,0,0.6))
+    drop-shadow( 6px 10px 24px rgba(0,0,0,0.6))
+    drop-shadow(0   2px  40px rgba(0,0,0,0.35));
+}
+
+/* ── 페이지 ── */
+.book-page {
+  background: #fff;
+  overflow: hidden;
+  box-shadow:
+    inset -5px 0 12px rgba(0,0,0,0.06),
+    inset  5px 0 12px rgba(0,0,0,0.06);
+}
+.book-page img {
+  width: 100%; height: 100%;
+  display: block;
+  object-fit: cover;
+  user-select: none;
+  pointer-events: none;
+}
+
+/* ── 제본선 ── */
+.spine {
+  position: absolute;
+  left: 50%; top: 0;
+  transform: translateX(-50%);
+  width: 3px;
+  pointer-events: none;
+  z-index: 20;
+  background: transparent;
+  box-shadow: -2px 0 8px rgba(0,0,0,0.2), 2px 0 8px rgba(0,0,0,0.2);
+}
+
+/* ── 이벤트 오버레이 ── */
+.event-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+}
+
+/* ── 돋보기 팝업 ── */
+.mag-popup {
+  position: fixed;
+  z-index: 900;
+  width: 340px;
+  background: #1a2236;
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 12px;
+  box-shadow: 0 12px 48px rgba(0,0,0,0.65);
+  overflow: hidden;
+  user-select: none;
+  cursor: move;
+}
+.mag-popup__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: rgba(255,255,255,0.05);
+  font-size: 12px;
+  color: #9aabc9;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.mag-popup__close {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255,255,255,0.1);
+  color: #c0cde0;
+  font-size: 11px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.mag-popup__close:hover { background: rgba(220,60,60,0.4); color: #fff; }
+.mag-popup__view {
+  width: 340px; height: 340px;
+  background-color: #fff;
+  background-repeat: no-repeat;
+}
+.mag-popup__hint {
+  padding: 5px 12px;
+  font-size: 10px;
+  color: #3d5070;
+  text-align: center;
+}
+
+/* ── 컨트롤 바 ── */
+.controls {
+  flex-shrink: 0;
+  padding: 10px 0 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.controls button {
+  width: 34px; height: 34px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(255,255,255,0.07);
+  color: #e8ecf3;
+  font-size: 15px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s, transform 0.1s;
+  user-select: none;
+}
+.controls button:hover:not(:disabled) { background: rgba(255,255,255,0.16); }
+.controls button:active:not(:disabled) { transform: scale(0.91); }
+.controls button:disabled { opacity: 0.25; cursor: default; }
+.controls button.btn-active { background: rgba(99,160,255,0.25); border-color: rgba(99,160,255,0.5); }
+
+.zoom-display {
+  font-size: 12px;
+  color: #8fa3c4;
+  min-width: 44px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.zoom-reset {
+  font-size: 14px !important;
+}
+.controls__page {
+  font-size: 12px;
+  color: #8fa3c4;
+  min-width: 110px;
+  text-align: center;
+}
+.divider {
+  width: 1px; height: 20px;
+  background: rgba(255,255,255,0.12);
+  margin: 0 2px;
+}
+.hint {
+  flex-shrink: 0;
+  text-align: center;
+  padding: 0 0 10px;
+  font-size: 11px;
+  color: #3a4f6a;
+}
