@@ -36,18 +36,25 @@ export default function Home() {
   const showSpine = !portrait && !isCover && !isBack;
   const canPan    = zoom > 1.05 && !magnifyOn;
 
-  /* ── 책 크기 계산 & 초기 중앙 정렬 ── */
-  const center = useCallback((pSize, por, z = 1) => {
+  /* ── 페이지별 정확한 중앙 계산 ──
+     표지(0): 오른쪽 절반만 보임 → 오른쪽 페이지 중앙 정렬
+     뒤표지 : 왼쪽 절반만 보임 → 왼쪽 페이지 중앙 정렬
+     펼침   : 양쪽 전체 중앙 정렬                          */
+  const computeCenter = useCallback((pi, z = 1) => {
     if (!areaRef.current) return { x: 0, y: 0 };
     const aw = areaRef.current.clientWidth;
     const ah = areaRef.current.clientHeight;
-    const bw = (por ? 1 : 2) * pSize.width * z;
-    const bh = pSize.height * z;
-    return {
-      x: (aw - bw) / 2,
-      y: Math.max(16, (ah - bh) / 2),
-    };
-  }, []);
+    const W  = pageSize.width  * z;   // 단일 페이지 폭 (줌 적용)
+    const H  = pageSize.height * z;
+
+    let x;
+    if (portrait)                   x = (aw - W) / 2;
+    else if (pi === 0)              x = aw / 2 - W * 1.5;  // 표지: 오른쪽 페이지 중앙
+    else if (pi >= TOTAL_PAGES - 1) x = aw / 2 - W * 0.5;  // 뒤표지: 왼쪽 페이지 중앙
+    else                            x = aw / 2 - W;          // 펼침: 양쪽 중앙
+
+    return { x, y: Math.max(16, (ah - H) / 2) };
+  }, [pageSize, portrait]);
 
   useEffect(() => {
     function calc() {
@@ -60,7 +67,14 @@ export default function Home() {
       if (h > maxH) { h = maxH; w = h / PAGE_RATIO; }
       const ps = { width: Math.round(w), height: Math.round(h) };
       setPageSize(ps);
-      const p = { x: (window.innerWidth - (isP ? 1 : 2) * ps.width) / 2, y: Math.max(16, (vh - 180 - ps.height) / 2) };
+      // 초기 pan: 표지(첫 페이지)는 오른쪽 절반이 보이므로 따로 계산
+      const aw2 = window.innerWidth;
+      const ah2 = vh - 180;
+      const W2  = ps.width;
+      const H2  = ps.height;
+      // 표지 기준으로 초기 중앙 정렬
+      const initX = isP ? (aw2 - W2) / 2 : aw2 / 2 - W2 * 1.5;
+      const p = { x: initX, y: Math.max(16, (ah2 - H2) / 2) };
       setPan(p);
       panRef.current = p;
       zoomRef.current = 1;
@@ -100,17 +114,12 @@ export default function Home() {
 
   /* ── 더블클릭 → 화면 맞추기 ── */
   const resetView = useCallback(() => {
-    if (!areaRef.current) return;
-    const aw = areaRef.current.clientWidth;
-    const ah = areaRef.current.clientHeight;
-    const bw = (portrait ? 1 : 2) * pageSize.width;
-    const bh = pageSize.height;
-    const p = { x: (aw - bw) / 2, y: Math.max(16, (ah - bh) / 2) };
+    const p = computeCenter(pageIndex, 1);
     setPan(p);
     panRef.current = p;
     setZoom(1);
     zoomRef.current = 1;
-  }, [portrait, pageSize]);
+  }, [computeCenter, pageIndex]);
 
   /* ── 드래그 팬 ── */
   const onMouseDown = useCallback((e) => {
@@ -140,7 +149,16 @@ export default function Home() {
   /* ── 페이지 이동 ── */
   const goPrev = useCallback(() => bookRef.current?.pageFlip()?.flipPrev(), []);
   const goNext = useCallback(() => bookRef.current?.pageFlip()?.flipNext(), []);
-  const onFlip = useCallback((e) => setPageIndex(e.data), []);
+  const onFlip = useCallback((e) => {
+    const newIdx = e.data;
+    setPageIndex(newIdx);
+    // 표지↔펼침↔뒤표지 전환 시 중앙 재정렬 (zoom=1일 때만)
+    if (zoomRef.current <= 1.05) {
+      const p = computeCenter(newIdx, 1);
+      setPan(p);
+      panRef.current = p;
+    }
+  }, [computeCenter]);
 
   /* ── 돋보기 ── */
   const onMagnifyClick = useCallback((e) => {
@@ -189,8 +207,8 @@ export default function Home() {
   return (
     <div className="viewer">
       <div className="viewer__header">
-        <div className="viewer__eyebrow">SUN MOON UNIVERSITY × VOLVO TRUCKS KOREA</div>
-        <h1 className="viewer__title">모빌리티시스템공학과 안내 브로셔</h1>
+        <div className="viewer__eyebrow">SUN MOON UNIVERSITY · 2027학년도 신입생 모집</div>
+        <h1 className="viewer__title">조기취업형 계약학과 안내 브로셔</h1>
       </div>
 
       {/* 책 영역 — flex:1로 남은 공간 모두 차지 */}
